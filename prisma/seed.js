@@ -11,7 +11,7 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
     console.log('🌱 Iniciando seed...');
 
-    await prisma.exemplo.createMany({
+    await prisma.movie.createMany({
         data: [
         { title: 'The Shawshank Redemption', description: 'Two imprisoned men bond over a number of years, finding solace and eventual redemption through acts of common decency.', duration: 142, genre: 'Drama', rating: 9.3 },
         { title: 'The Godfather', description: 'The aging patriarch of an organized crime dynasty transfers control of his clandestine empire to his reluctant son.', duration: 175, genre: 'Crime', rating: 9.2 },
