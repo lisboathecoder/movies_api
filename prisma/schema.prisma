@@ -12,7 +12,7 @@ model Movie {
     description String?
     duration    Int
     genre       String
-    rating      Decimal  @default(0.00)
+    rating      Decimal  @default(4.2)
     available   Boolean  @default(true)
     createdAt   DateTime @default(now())
 

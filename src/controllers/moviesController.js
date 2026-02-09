@@ -21,8 +21,6 @@ export const getAll = async (req, res) => {
   if (duration) filters.duration = duration;
   if (genre) filters.genre = genre;
   if (rating) filters.rating = rating;
-  if (minRating) filters.minRating = parseFloat(rating = 8.0);
-  if (maxDuration) filters.maxDuration = parseInt(duration = 120);
   if (available) filters.available = available === "true";
 };
 
@@ -44,6 +42,18 @@ export const create = async (req, res) => {
           .status(400)
           .json({ error: "O título deve ter pelo menos 3 caracteres!" });
 
+      const palavrasProibidas = ["merda", "fdp", "bicha", "idiota", "imbecil", "burro", "estúpido"];
+
+        const contemPalavraProibida = palavrasProibidas.some(palavra => 
+          title.toLowerCase().includes(palavra.toLowerCase())
+        );
+        
+        if (contemPalavraProibida) {
+          return res.status(400).json({ 
+          error: "O título contém palavras inadequadas ou proibidas!" 
+          });
+        }
+
     const filmeExiste = await model.findAll({ title });
     if (filmeExiste && filmeExiste.length > 0) {
       return res
@@ -63,6 +73,10 @@ export const create = async (req, res) => {
       return res
         .status(400)
         .json({ error: "A duração (duration) é obrigatória!" });
+        if(duration < 30)
+          return res.status(400).json({
+            error: "A duração (duration) deve ser maior que 30 minutos!"
+          }); 
     if (duration > 300)
       return res.status(400).json({
         error: "A duração (duration) deve ser menor que 300 minutos!",
@@ -87,6 +101,18 @@ export const create = async (req, res) => {
           "O gênero (genre) informado é inválido! Gêneros válidos: Ação, Drama, Comédia, Terror, Romance, Animação, Ficção Científica, Suspense.",
       });
     }
+    const filmesDoGenero = await model.findAll({ genre });
+    if (filmesDoGenero && filmesDoGenero.length >= 5) {
+      return res.status(400).json({
+      error: `O gênero "${genre}" já possui o máximo de 5 filmes cadastrados!`,
+      });
+    }
+
+    if (genre === "Terror" && rating > 8)
+      return res.status(400).json({
+      error: "Filmes do gênero Terror não podem ter uma avaliação maior que 8!",
+      });
+
     if (!rating)
       return res.status(400).json({
         error: "A avaliação (rating) é obrigatória!",
@@ -95,13 +121,19 @@ export const create = async (req, res) => {
       return res.status(400).json({
         error: "A avaliação (rating) deve estar entre 0 e 10!",
       });
+
+      if (rating < 3 && available !== false) {
+        return res.status(400).json({
+        error: "Filmes com avaliação inferior a 3 devem ser marcados como indisponíveis (available: false)!",
+        });
+      }
     const data = await model.create({
       title,
       description,
       duration: parseInt(duration),
       genre,
       rating: parseFloat(rating),
-      available: (available = true),
+      available: available === undefined ? true : available === "true"
     });
 
     res.status(201).json({
@@ -139,7 +171,7 @@ export const getById = async (req, res) => {
 
 export const update = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id, available, genre } = req.params;
 
     if (!req.body || Object.keys(req.body).length === 0) {
       return res.status(400).json({
@@ -154,8 +186,6 @@ export const update = async (req, res) => {
       return res
         .status(404)
         .json({ error: "Filme não encontrado para atualizar." });
-
-        
     }
 
     if(available === false) {
@@ -163,6 +193,8 @@ export const update = async (req, res) => {
             error: "Filmes que não estão disponíveis não podem ser atualizados." 
         });
     }
+    
+
 
     const data = await model.update(id, req.body);
     res.json({
